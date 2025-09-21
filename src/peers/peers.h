@@ -18,6 +18,8 @@ struct Peer {
 };
 
 void* populatePeerInfo(struct Peer* peer);
-void* markPeerAsConnected(struct Peer* peers[], struct sockaddr_in* peer_addr, socklen_t* peer_addr_len);
+void freePeers(struct Peer* peers[]);
+struct Peer* getPredecessor(struct Peer* peers[]);
+struct Peer* getSuccessor(struct Peer* peers[]);
 
 #endif

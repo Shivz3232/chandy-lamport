@@ -3,10 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <netdb.h>
 
 #include "../logger/logger.h"
+#include "../config/config.h"
 
 int numPeers = 0;
 int connectedPeers = 0;
@@ -42,32 +44,27 @@ void* populatePeerInfo(struct Peer* peer) {
   return NULL;
 }
 
-void* markPeerAsConnected(struct Peer* peers[], struct sockaddr_in* peer_addr, socklen_t* peer_addr_len) {
-  char peer_name[maxPeerNameSize];
+void freePeers(struct Peer* peers[]) {
+  if (!peers) return;
   
-  if (getnameinfo((struct sockaddr*)peer_addr, *peer_addr_len, peer_name, maxPeerNameSize, NULL, 0, NI_NAMEREQD) < 0) {
-    perror("getnameinfo");
-    exit(EXIT_FAILURE);
-  }
-
-  // Reduce FQDN by trimming at the first dot
-  char *dot = strchr(peer_name, '.');
-  if (dot) {
-    *dot = '\0';
+  for (int i = 0; i < maxPeers; i++) {
+      if (peers[i]) {
+          free(peers[i]->name);
+          free(peers[i]);
+      }
   }
   
-  for (int i = 0; i < numPeers; i++) {
-    if (strcmp(peers[i]->name, peer_name) == 0 && peers[i]->connected == 0) {
-      peers[i]->connected = 1;
-      connectedPeers += 1;
+  free(peers);
+}
 
-      info("Marked peer %s as connected\n", peer_name);
-      
-      return NULL;
-    }
+struct Peer* getPredecessor(struct Peer* peers[]) {
+  if (processId == 0) {
+    return peers[numPeers - 1];
   }
 
-  info("Recieived message from an unknown peer: %s\n", peer_name);
-  
-  return NULL;
+  return peers[processId - 1];
+}
+
+struct Peer* getSuccessor(struct Peer* peers[]) {
+  return peers[(processId + 1) % numPeers];
 }
