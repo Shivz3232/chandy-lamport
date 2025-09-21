@@ -10,8 +10,10 @@
 // DEFAULTS
 // char* cEnv = "development"; // To enable debug logs
 char* cEnv = "production";
+int processId = -1;
 char* hostName;
 char* port = "3000";
+int backlog = 10;
 char* hostsFilePath = "hostsfile.txt";
 int maxPeerNameSize = 100;
 int maxPeers = 100;
@@ -20,6 +22,7 @@ int maxMessageSize = 100;
 void* initializeCEnv();
 void* initializeHostName();
 void* initializePort();
+void* initializeBacklog();
 void* initializeHostsFilePath();
 void* initializeMaxPeerNameSize();
 void* initializeMaxPeers();
@@ -28,6 +31,7 @@ void* initializeMaxMessageSize();
 void* initializeEnvVariables() {
   initializeCEnv();
   initializePort();
+  initializeBacklog();
   initializeHostsFilePath();
   initializeMaxPeerNameSize();
   initializeHostName();
@@ -59,6 +63,8 @@ void* initializeHostName() {
   }
 
   hostName = strdup(value);
+  
+  debug("HOSTNAME set to %s", hostName);
 
   return NULL;
 }
@@ -71,6 +77,19 @@ void* initializePort() {
   } else {
     port = strdup(value);
     debug("PORT set to %s", port);
+  }
+
+  return NULL;
+}
+
+void* initializeBacklog() {
+  char* value = getenv("BACKLOG");
+
+  if (!value) {
+    debug("BACKLOG not found, defaulting to: %d", backlog);
+  } else {
+    backlog = atoi(value);
+    debug("BACKLOG set to %d", backlog);
   }
 
   return NULL;

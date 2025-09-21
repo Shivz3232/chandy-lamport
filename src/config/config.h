@@ -2,8 +2,10 @@
 #define CONFIG_H
 
 extern char* cEnv;
+extern int processId;
 extern char* hostName;
 extern char* port;
+extern int backlog;
 extern char* hostsFilePath;
 extern int maxPeerNameSize;
 extern int maxPeers;
