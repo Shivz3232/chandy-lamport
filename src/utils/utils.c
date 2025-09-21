@@ -66,6 +66,7 @@ void* parseHostsfile(struct Peer* peers[]) {
 
     // Skip myself
     if (strcmp(hostName, line) == 0) {
+      processId = numPeers;
       continue;
     }
     
