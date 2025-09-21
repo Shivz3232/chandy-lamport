@@ -11,7 +11,8 @@
 #include "../config/config.h"
 
 int numPeers = 0;
-int connectedPeers = 0;
+int outboundConnections = 0;
+int inboundConnections = 0;
 
 void* populatePeerInfo(struct Peer* peer) {
   struct addrinfo hints, *addr_info;
@@ -26,7 +27,7 @@ void* populatePeerInfo(struct Peer* peer) {
     exit(EXIT_FAILURE);
   }
 
-  peer->addr_info = addr_info;
+  peer->write_addr_info = addr_info;
 
   int socket_fd;
   for (struct addrinfo* p = addr_info; p != NULL; p = p->ai_next) {
@@ -35,8 +36,8 @@ void* populatePeerInfo(struct Peer* peer) {
       continue;
     }
 
-    peer->chosen_addr_info = p;
-    peer->socket_fd = socket_fd;
+    peer->write_chosen_addr_info = p;
+    peer->write_socket_fd = socket_fd;
     
     break;
   }
@@ -67,4 +68,73 @@ struct Peer* getPredecessor(struct Peer* peers[]) {
 
 struct Peer* getSuccessor(struct Peer* peers[]) {
   return peers[(processId + 1) % numPeers];
+}
+
+void* dialPeers(void* input) {
+  struct Peer** peers = input;
+  
+  for (int i = 0; i < numPeers; i++) {
+    // Skip myself
+    if (i == processId) {
+      continue;
+    }
+    
+    int retries = 0;
+    int connected = 0;
+    while (connected == 0 && retries < maxRetries) {
+      struct addrinfo hints, *p;
+
+      memset(&hints, 0, sizeof(hints));
+      hints.ai_family = AF_INET;
+      hints.ai_socktype = SOCK_STREAM;
+      
+      if (getaddrinfo(peers[i]->name, port, &hints, &peers[i]->write_addr_info) < 0) {
+        perror("getaddrinfo");
+        retries += 1;
+        sleep(backoffDuration);
+        info("Retrying to connect to %s\n", peers[i]->name);
+        continue;
+      }
+
+      int yes = 1;
+      int socket_fd;
+      for (p = peers[i]->write_addr_info; p != NULL; p = p->ai_next) {
+        if ((socket_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) {
+          perror("socket");
+          continue;
+        }
+
+        info("Attempting connection to %s\n", peers[i]->name);
+
+        if (connect(socket_fd, p->ai_addr, p->ai_addrlen) < 0) {
+          perror("connect");
+          close(socket_fd);
+          continue;
+        }
+
+        // Use this connection only for writing.
+        shutdown(socket_fd, SHUT_RD);
+
+        info("Successfully connected to %s\n", peers[i]->name);
+        
+        break;
+      }
+
+      if (!p) {
+        info("Failed to connect to %s. Tried %d times. Sleeping.\n", peers[i]->name, retries + 1);
+        retries += 1;
+        sleep(backoffDuration);
+        info("Retrying to connect to %s\n", peers[i]->name);
+        continue;
+      }
+
+      peers[i]->write_chosen_addr_info = p;
+
+      outboundConnections += 1;
+
+      connected = 1;
+    }
+  }
+  
+  return NULL;
 }
