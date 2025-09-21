@@ -14,6 +14,8 @@ int processId = -1;
 char* hostName;
 char* port = "3000";
 int backlog = 10;
+int maxRetries = 5;
+int backoffDuration = 5;
 char* hostsFilePath = "hostsfile.txt";
 int maxPeerNameSize = 100;
 int maxPeers = 100;
@@ -23,6 +25,8 @@ void* initializeCEnv();
 void* initializeHostName();
 void* initializePort();
 void* initializeBacklog();
+void* initializeMaxRetries();
+void* initializeBackoffDuration();
 void* initializeHostsFilePath();
 void* initializeMaxPeerNameSize();
 void* initializeMaxPeers();
@@ -32,6 +36,8 @@ void* initializeEnvVariables() {
   initializeCEnv();
   initializePort();
   initializeBacklog();
+  initializeMaxRetries();
+  initializeBackoffDuration();
   initializeHostsFilePath();
   initializeMaxPeerNameSize();
   initializeHostName();
@@ -90,6 +96,32 @@ void* initializeBacklog() {
   } else {
     backlog = atoi(value);
     debug("BACKLOG set to %d", backlog);
+  }
+
+  return NULL;
+}
+
+void* initializeMaxRetries() {
+  char* value = getenv("MAX_RETRIES");
+
+  if (!value) {
+    debug("MAX_RETRIES not found, defaulting to: %d", maxRetries);
+  } else {
+    maxRetries = atoi(value);
+    debug("MAX_RETRIES set to %d", maxRetries);
+  }
+
+  return NULL;
+}
+
+void* initializeBackoffDuration() {
+  char* value = getenv("backoffDuration");
+
+  if (!value) {
+    debug("backoffDuration not found, defaulting to: %d", backoffDuration);
+  } else {
+    backoffDuration = atoi(value);
+    debug("backoffDuration set to %d", backlog);
   }
 
   return NULL;
