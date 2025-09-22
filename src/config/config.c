@@ -18,8 +18,7 @@ int snapshotId = -1;
 int snapshotEnabled = 0;
 
 // DEFAULTS
-// char* cEnv = "development"; // To enable debug logs
-char* cEnv = "production";
+char* cEnv = "development";
 int processId = -1;
 char* hostName;
 char* port = "3000";
