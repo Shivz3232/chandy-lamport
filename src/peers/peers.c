@@ -115,7 +115,7 @@ void* dialPeers(void* input) {
         // Use this connection only for writing.
         shutdown(socket_fd, SHUT_RD);
 
-        info("Successfully connected to %s\n", peers[i]->name);
+        info("Successful outbound connection to %s\n", peers[i]->name);
         
         break;
       }
