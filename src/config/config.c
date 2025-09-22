@@ -7,6 +7,16 @@
 
 #include "../logger/logger.h"
 
+// CLI Arguments
+char* name;
+char* network;
+char* inputHostname;
+int tokenDelay = -1;
+int markerDelay = -1;
+int snapshotDelay = -1;
+int snapshotId = -1;
+int snapshotEnabled = 0;
+
 // DEFAULTS
 // char* cEnv = "development"; // To enable debug logs
 char* cEnv = "production";
@@ -38,7 +48,7 @@ void* initializeEnvVariables() {
   initializeBacklog();
   initializeMaxRetries();
   initializeBackoffDuration();
-  initializeHostsFilePath();
+  // initializeHostsFilePath();
   initializeMaxPeerNameSize();
   initializeHostName();
   initializeMaxPeers();
