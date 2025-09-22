@@ -1,6 +1,5 @@
 #include "queue.h"
 
-#include <stdbool.h>
 #include <stdio.h>
 
 #include "../logger/logger.h"
@@ -11,9 +10,21 @@ void initializeQueue(Queue* q, int size) {
   q->rear = 0;
 }
 
-bool isEmpty(Queue* q) { return (q->front == q->rear - 1); }
+int isEmpty(Queue* q) {
+  if (q->front == q->rear - 1) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
 
-bool isFull(Queue* q) { return (q->rear == channelSize); }
+int isFull(Queue* q) {
+  if (q->rear == channelSize) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
 
 int enqueue(Queue* q, int value) {
   if (isFull(q)) {

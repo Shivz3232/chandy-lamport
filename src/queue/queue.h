@@ -2,15 +2,15 @@
 #define QUEUE_H
 
 typedef struct {
-    int items[];
-    int front;
-    int rear;
-    int closed;
+  int front;
+  int rear;
+  int closed;
+  int* items;
 } Queue;
 
 void initializeQueue(Queue*, int);
-bool isEmpty(Queue*);
-bool isFull(Queue*);
+int isEmpty(Queue*);
+int isFull(Queue*);
 int enqueue(Queue*, int);
 int dequeue(Queue*);
 int peek(Queue*);
