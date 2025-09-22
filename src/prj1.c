@@ -87,15 +87,15 @@ int main(int argc, char const* argv[]) {
   pthread_t inboundConnectionsEstablishmentThread;
   pthread_create(&inboundConnectionsEstablishmentThread, NULL, acceptConnections, &socket_fd);
   pthread_detach(inboundConnectionsEstablishmentThread);
-  debug("Successfully started thread to establish outbound connections\n");
+  debug("Successfully started thread to establish inbound connections\n");
   debug("============================================\n\n\n\n");
 
-  
-
-  while (outboundConnections != numPeers - 1 && inboundConnections != numPeers - 1) {
+  while (outboundConnections != numPeers - 1 || inboundConnections != numPeers - 1) {
     info("All connections not yet formed. outbound: %d, inbound: %d. Main thread going to sleep.\n", outboundConnections, inboundConnections);
     sleep(backoffDuration);
   }
+
+  info("Establishied inbound and outbound connections with all peers\n");
 
   debug("============================================\n");
   debug("Wrapping up\n");
@@ -109,5 +109,46 @@ int main(int argc, char const* argv[]) {
 }
 
 void* acceptConnections(void* input) {
+  int socket_fd = *(int*)input;
+  
+  while (inboundConnections < numPeers - 1) {
+    int peer_fd;
+    struct sockaddr_storage peerAddr;
+    socklen_t peerAddrLen = sizeof(peerAddr);
+
+    if ((peer_fd = accept(socket_fd, (struct sockaddr*)&peerAddr, &peerAddrLen)) < 0) {
+      perror("accept");
+      exit(EXIT_FAILURE);
+    }
+
+    char* peerName = getNameInfo((struct sockaddr*)&peerAddr, &peerAddrLen);
+
+    int found = 0;
+    for (int i = 0; i < numPeers && found == 0; i++) {
+      if (strcmp(peers[i]->name, peerName) == 0) {
+        found = 1;
+        
+        peers[i]->read_socket_fd = peer_fd;
+
+        peers[i]->read_addr_info = malloc(peerAddrLen);
+        memcpy(peers[i]->read_addr_info, &peerAddr, peerAddrLen);
+
+        peers[i]->read_addr_info_len = peerAddrLen;
+
+        break;
+      }
+    }
+
+    free(peerName);
+
+    if (found == 0) {
+      info("Received connection from an unknown peer %s\n", peerName);
+    } else {
+      info("Successful inbound connection from %s\n", peerName);
+    }
+
+    inboundConnections += 1;
+  }
+
   return NULL;
 }
