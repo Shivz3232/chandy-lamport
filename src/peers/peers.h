@@ -13,12 +13,11 @@ struct Peer {
   int id;
   char* name;
   int read_socket_fd;
-  struct addrinfo* read_addr_info;
-  struct addrinfo* read_chosen_addr_info;
+  struct sockaddr_storage* read_addr_info;
+  socklen_t read_addr_info_len;
   int write_socket_fd;
   struct addrinfo* write_addr_info;
   struct addrinfo* write_chosen_addr_info;
-  int connected;
 };
 
 void* populatePeerInfo(struct Peer* peer);
