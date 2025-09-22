@@ -20,6 +20,8 @@ void* acceptConnections(void*);
 int main(int argc, char const* argv[]) {
   info("Process started\n");
 
+  parseArgs(argc, (char* const*)argv);
+
   initializeEnvVariables();
   debug("Successfully initialized environment Variables.\n");
   debug("============================================\n\n\n\n");
