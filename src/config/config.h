@@ -15,6 +15,7 @@ extern int processId;
 extern char* hostName;
 extern char* port;
 extern int backlog;
+extern int channelSize;
 extern int maxRetries;
 extern int backoffDuration;
 extern char* hostsFilePath;

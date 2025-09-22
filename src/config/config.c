@@ -24,6 +24,7 @@ int processId = -1;
 char* hostName;
 char* port = "3000";
 int backlog = 10;
+int channelSize = 10;
 int maxRetries = 5;
 int backoffDuration = 5;
 char* hostsFilePath = "hostsfile.txt";
@@ -35,6 +36,7 @@ void* initializeCEnv();
 void* initializeHostName();
 void* initializePort();
 void* initializeBacklog();
+void* initializeChannelSize();
 void* initializeMaxRetries();
 void* initializeBackoffDuration();
 void* initializeHostsFilePath();
@@ -46,6 +48,7 @@ void* initializeEnvVariables() {
   initializeCEnv();
   initializePort();
   initializeBacklog();
+  initializeChannelSize();
   initializeMaxRetries();
   initializeBackoffDuration();
   // initializeHostsFilePath();
@@ -106,6 +109,19 @@ void* initializeBacklog() {
   } else {
     backlog = atoi(value);
     debug("BACKLOG set to %d", backlog);
+  }
+
+  return NULL;
+}
+
+void* initializeChannelSize() {
+  char* value = getenv("CHANNEL_SIZE");
+
+  if (!value) {
+    debug("CHANNEL_SIZE not found, defaulting to: %d", channelSize);
+  } else {
+    channelSize = atoi(value);
+    debug("CHANNEL_SIZE set to %d", channelSize);
   }
 
   return NULL;
