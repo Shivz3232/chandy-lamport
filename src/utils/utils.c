@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include <netdb.h>
 
@@ -90,7 +91,7 @@ void* parseHostsfile(struct Peer* peers[]) {
 }
 
 char* getNameInfo(struct sockaddr* peerAddr, socklen_t* peerAddrLen) {
-  char peerName[NI_MAXHOST];
+  char* peerName = malloc(NI_MAXHOST);
   if (!peerName) {
     perror("malloc");
     exit(EXIT_FAILURE);
@@ -108,4 +109,61 @@ char* getNameInfo(struct sockaddr* peerAddr, socklen_t* peerAddrLen) {
   }
 
   return peerName;
+}
+
+void parseArgs(int argc, char* const argv[]) {
+  int opt;
+  int optionIndex = 0;
+
+  static struct option longOptions[] = {
+    {"name",     required_argument, 0,  0 },
+    {"network",  required_argument, 0,  0 },
+    {"hostname", required_argument, 0,  0 },
+    {0,          0,                 0,  0 }
+  };
+
+  while (1) {
+      opt = getopt_long(argc, argv, "h:t:m:s:p:x", longOptions, &optionIndex);
+
+      if (opt == -1) break;
+
+      switch (opt) {
+          case 0:
+              if (strcmp(longOptions[optionIndex].name, "name") == 0) {
+                  name = strdup(optarg);
+              } else if (strcmp(longOptions[optionIndex].name, "network") == 0) {
+                  network = strdup(optarg);
+              } else if (strcmp(longOptions[optionIndex].name, "hostname") == 0) {
+                  inputHostname = strdup(optarg);
+              }
+              break;
+
+          case 'h':
+              hostsFilePath = strdup(optarg);
+              break;
+
+          case 't':
+              tokenDelay = atoi(optarg);
+              break;
+
+          case 'm':
+              markerDelay = atoi(optarg);
+              break;
+
+          case 's':
+              snapshotDelay = atoi(optarg);
+              break;
+
+          case 'p':
+              snapshotId = atoi(optarg);
+              break;
+
+          case 'x':
+              snapshotEnabled = 1;
+              break;
+
+          default:
+              break;
+      }
+  }
 }
