@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include <netdb.h>
 
@@ -14,8 +15,13 @@
 
 int state = 0;
 struct Peer** peers;
+struct pollfd* pollFds;
 
 void* acceptConnections(void*);
+
+void* setupPollFds();
+void* startPolling();
+void* freePollFds();
 
 int main(int argc, char const* argv[]) {
   info("Process started\n");
@@ -97,10 +103,24 @@ int main(int argc, char const* argv[]) {
     sleep(backoffDuration);
   }
 
-  info("Establishied inbound and outbound connections with all peers\n");
+  info("READY! Establishied inbound and outbound connections with all peers\n");
+
+  debug("============================================\n");
+  debug("Setting up pollFds\n");
+  setupPollFds();
+  debug("Successfully setup pollFds\n");
+  debug("============================================\n\n\n\n");  
+  
+  // NOTE THIS IS A BLOCKING STEP
+  debug("============================================\n");
+  debug("Starting polling\n");
+  startPolling();
+  debug("Stopped polling\n");
+  debug("============================================\n\n\n\n");  
 
   debug("============================================\n");
   debug("Wrapping up\n");
+  freePollFds();
   close(socket_fd);
   freeaddrinfo(addr_info);
   freePeers(peers);
@@ -141,16 +161,79 @@ void* acceptConnections(void* input) {
       }
     }
 
-    free(peerName);
-
     if (found == 0) {
       info("Received connection from an unknown peer %s\n", peerName);
     } else {
       info("Successful inbound connection from %s\n", peerName);
     }
 
+    free(peerName);
+
     inboundConnections += 1;
   }
 
   return NULL;
 }
+
+void* setupPollFds() {
+  pollFds = malloc(sizeof(struct pollfd) * numPeers);
+
+  for (int i = 0; i < numPeers; i++) {
+    if (i == processId) {
+      pollFds[i].fd = -1;
+      pollFds[i].events = 0;
+      pollFds[i].revents = 0;
+    } else {
+      pollFds[i].fd = peers[i]->read_socket_fd;
+      pollFds[i].events = POLLIN | POLLHUP;
+    }
+  }
+
+  return NULL;
+}
+
+void* startPolling() {
+  while (1) {
+    int numEvents = poll(pollFds, numPeers, -1);
+
+    debug("Poll: received %d events\n", numEvents);
+
+    if (numEvents == 0) {
+      info("Poll timed out?!\n");
+      return NULL;
+    } else {
+      for (int j = 0, seen = 0; seen == numEvents || j < numPeers; j++) {
+        if (pollFds[j].revents == 0) continue;
+
+        if (j == processId) {
+          debug("Ignoring poll event from self\n");
+          continue;
+        }
+
+        if (j < numPeers && (pollFds[j].revents & POLLIN)) {
+          debug("Poll: POLLIN event for process %d\n", j + 1);
+          // handle read
+        }
+
+        if (pollFds[j].revents & POLLHUP) {
+          debug("Poll: POLLHUP event for process %d\n", j + 1);
+          // handle closed socket
+        }
+
+        seen += 1;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+void* freePollFds() {
+  if (pollFds) {
+    free(pollFds);
+    pollFds = NULL;
+  }
+
+  return NULL;
+}
+
