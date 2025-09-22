@@ -90,8 +90,12 @@ void* parseHostsfile(struct Peer* peers[]) {
 }
 
 char* getNameInfo(struct sockaddr* peerAddr, socklen_t* peerAddrLen) {
-  char* peerName = malloc(maxPeerNameSize);
-  
+  char peerName[NI_MAXHOST];
+  if (!peerName) {
+    perror("malloc");
+    exit(EXIT_FAILURE);
+}
+
   if (getnameinfo(peerAddr, *peerAddrLen, peerName, maxPeerNameSize, NULL, 0, NI_NAMEREQD) < 0) {
     perror("getnameinfo");
     exit(EXIT_FAILURE);
