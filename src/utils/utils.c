@@ -11,6 +11,7 @@
 #include "../config/config.h"
 #include "../peers/peers.h"
 #include "../logger/logger.h"
+#include "../queue/queue.h"
 
 int bindToBest(struct addrinfo* addr_info) {
   int yes = 1;
@@ -78,6 +79,9 @@ void* parseHostsfile(struct Peer* peers[]) {
 
     peer->id = numPeers + 1;
     peer->name = strdup(line);
+    
+    peer->write_channel = malloc(sizeof(Queue));
+    peer->read_channel->items = malloc(sizeof(int) * channelSize);
 
     peers[numPeers] = peer;
     populatePeerInfo(peer);

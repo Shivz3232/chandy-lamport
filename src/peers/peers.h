@@ -1,5 +1,6 @@
 #include <netdb.h>
 
+#include "../queue/queue.h"
 #include "../config/config.h"
 
 #ifndef PEERS_H
@@ -18,6 +19,7 @@ struct Peer {
   int write_socket_fd;
   struct addrinfo* write_addr_info;
   struct addrinfo* write_chosen_addr_info;
+  Queue* read_channel;
 };
 
 void* populatePeerInfo(struct Peer* peer);
