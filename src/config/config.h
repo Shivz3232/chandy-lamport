@@ -1,14 +1,14 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-char* name;
-char* network;
-char* inputHostname;
-int tokenDelay;
-int markerDelay;
-int snapshotDelay;
-int snapshotId;
-int snapshotEnabled;
+extern char* name;
+extern char* network;
+extern char* inputHostname;
+extern int tokenDelay;
+extern int markerDelay;
+extern int snapshotDelay;
+extern int snapshotId;
+extern int snapshotEnabled;
 
 extern char* cEnv;
 extern int processId;
