@@ -77,7 +77,6 @@ void* parseHostsfile(struct Peer* peers[]) {
 
     peer->id = numPeers + 1;
     peer->name = strdup(line);
-    peer->connected = 0;
 
     peers[numPeers] = peer;
     populatePeerInfo(peer);
@@ -88,4 +87,21 @@ void* parseHostsfile(struct Peer* peers[]) {
   fclose(hostsfile);
   
   return NULL;
+}
+
+char* getNameInfo(struct sockaddr* peerAddr, socklen_t* peerAddrLen) {
+  char* peerName = malloc(maxPeerNameSize);
+  
+  if (getnameinfo(peerAddr, *peerAddrLen, peerName, maxPeerNameSize, NULL, 0, NI_NAMEREQD) < 0) {
+    perror("getnameinfo");
+    exit(EXIT_FAILURE);
+  }
+
+  // Reduce FQDN by trimming at the first dot
+  char *dot = strchr(peerName, '.');
+  if (dot) {
+    *dot = '\0';
+  }
+
+  return peerName;
 }

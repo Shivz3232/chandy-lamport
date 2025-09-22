@@ -5,5 +5,6 @@
 
 int bindToBest(struct addrinfo* addr_info);
 void* parseHostsfile(struct Peer* peers[]);
+char* getNameInfo(struct sockaddr*, socklen_t*);
 
 #endif
