@@ -4,7 +4,7 @@ RUN apt-get update
 RUN apt-get install -y gcc
 RUN apt-get install make
 
-ENV APP_HOME=/usr/src/prj1
+ENV APP_HOME=/usr/src/prj2
 
 RUN mkdir -p ${APP_HOME}
 WORKDIR ${APP_HOME}
@@ -22,4 +22,4 @@ COPY makefile .
 RUN make compile
 
 # CMD ["make", "execute"]
-ENTRYPOINT ${APP_HOME}/bin/prj1
+ENTRYPOINT ${APP_HOME}/bin/prj2
