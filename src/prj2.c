@@ -12,6 +12,8 @@
 #include "peers/peers.h"
 #include "utils/utils.h"
 #include "logger/logger.h"
+#include "token/token.h"
+#include "queue/queue.h"
 
 int state = 0;
 struct Peer** peers;
@@ -29,7 +31,7 @@ int main(int argc, char const* argv[]) {
   parseArgs(argc, (char* const*)argv);
 
   initializeEnvVariables();
-  debug("Successfully initialized environment Variables.\n");
+  debug("Successfully initialized config parameters.\n");
   debug("============================================\n\n\n\n");
 
   peers = malloc(maxPeers * sizeof(struct Peer*));
@@ -110,6 +112,16 @@ int main(int argc, char const* argv[]) {
   setupPollFds();
   debug("Successfully setup pollFds\n");
   debug("============================================\n\n\n\n");  
+
+  if (starter) {
+    debug("============================================\n");
+    debug("Starting token forwarding thread");
+    pthread_t tokenForwardingThread;
+    pthread_create(&tokenForwardingThread, NULL, startTokenPassing, peers);
+    pthread_detach(tokenForwardingThread);
+    debug("Successfully started thread to forward token\n");
+    debug("============================================\n\n\n\n");
+  }
   
   // NOTE THIS IS A BLOCKING STEP
   debug("============================================\n");
@@ -212,7 +224,30 @@ void* startPolling() {
 
         if (j < numPeers && (pollFds[j].revents & POLLIN)) {
           debug("Poll: POLLIN event for process %d\n", j + 1);
-          // handle read
+          int numBytes;
+          char* buf = malloc(maxMessageSize);
+
+          if((numBytes = recv(peers[j]->read_socket_fd, buf, maxMessageSize - 1, 0)) < 0) {
+            debug("recv: Failed! numBytes: %d\n", numBytes);
+          }
+
+          if (numBytes == 0) {
+            debug("Peer %d closed the connection. numBytes: 0!!\n", j);
+          }
+
+          buf[numBytes] = '\0';
+
+          debug("Peer %d says: %s\n", peers[j]->name, buf);
+
+          enqueue(peers[j]->read_channel, buf);
+
+          debug("============================================\n");
+          debug("Starting token forwarding thread");
+          pthread_t tokenForwardingThread;
+          pthread_create(&tokenForwardingThread, NULL, passToken, peers);
+          pthread_detach(tokenForwardingThread);
+          debug("Successfully started thread to forward token\n");
+          debug("============================================\n\n\n\n");
         }
 
         if (pollFds[j].revents & POLLHUP) {
