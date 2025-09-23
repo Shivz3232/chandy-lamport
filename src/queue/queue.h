@@ -5,14 +5,14 @@ typedef struct {
   int front;
   int rear;
   int closed;
-  int* items;
+  char** items;
 } Queue;
 
-void initializeQueue(Queue*, int);
+void initializeQueue(Queue*);
 int isEmpty(Queue*);
 int isFull(Queue*);
-int enqueue(Queue*, int);
+int enqueue(Queue*, char*);
 int dequeue(Queue*);
-int peek(Queue*);
+char* peek(Queue*);
 
 #endif

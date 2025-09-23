@@ -1,11 +1,12 @@
 #include "queue.h"
 
-#include <stdio.h>
+#include <stdlib.h>
 
+#include "../config/config.h"
 #include "../logger/logger.h"
 
-void initializeQueue(Queue* q, int size) {
-  q->items = malloc(sizeof(int) * size);
+void initializeQueue(Queue* q) {
+  q->items = malloc(sizeof(char *) * channelSize);
   q->front = -1;
   q->rear = 0;
 }
@@ -26,7 +27,7 @@ int isFull(Queue* q) {
   }
 }
 
-int enqueue(Queue* q, int value) {
+int enqueue(Queue* q, char* value) {
   if (isFull(q)) {
     debug("Trying to enqueue to a full queue\n");
     return -1;
@@ -49,11 +50,11 @@ int dequeue(Queue* q) {
   return 1;
 }
 
-int peek(Queue* q)
+char* peek(Queue* q)
 {
   if (isEmpty(q)) {
     debug("Trying to peek into an empty queue");
-    return -1;
+    return NULL;
   }
   
   return q->items[q->front + 1];
