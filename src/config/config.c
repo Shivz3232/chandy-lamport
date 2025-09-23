@@ -7,6 +7,8 @@
 
 #include "../logger/logger.h"
 
+int state = 0;
+
 // CLI Arguments
 char* name;
 char* network;

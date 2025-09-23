@@ -15,7 +15,6 @@
 #include "token/token.h"
 #include "queue/queue.h"
 
-int state = 0;
 struct Peer** peers;
 struct pollfd* pollFds;
 
@@ -112,6 +111,8 @@ int main(int argc, char const* argv[]) {
   setupPollFds();
   debug("Successfully setup pollFds\n");
   debug("============================================\n\n\n\n");  
+
+  
 
   if (starter) {
     debug("============================================\n");
