@@ -80,8 +80,8 @@ void* parseHostsfile(struct Peer* peers[]) {
     peer->id = numPeers + 1;
     peer->name = strdup(line);
     
-    peer->write_channel = malloc(sizeof(Queue));
-    peer->read_channel->items = malloc(sizeof(int) * channelSize);
+    peer->read_channel = malloc(sizeof(Queue));
+    initializeQueue(peer->read_channel);
 
     peers[numPeers] = peer;
     populatePeerInfo(peer);
@@ -120,9 +120,9 @@ void parseArgs(int argc, char* const argv[]) {
   int optionIndex = 0;
 
   static struct option longOptions[] = {
-    {"name",     required_argument, 0,  0 },
-    {"network",  required_argument, 0,  0 },
-    {"hostname", required_argument, 0,  0 },
+    {"name",     optional_argument, 0,  0 },
+    {"network",  optional_argument, 0,  0 },
+    {"hostname", optional_argument, 0,  0 },
     {0,          0,                 0,  0 }
   };
 
@@ -163,11 +163,22 @@ void parseArgs(int argc, char* const argv[]) {
               break;
 
           case 'x':
-              snapshotEnabled = 1;
+              starter = 1;
               break;
 
           default:
               break;
       }
   }
+
+  debug("Arg name set to %s", name);
+  debug("Arg network set to %s", network);
+  debug("Arg inputHostname set to %s", inputHostname);
+  debug("Arg hostsFilePath set to %s", hostsFilePath);
+  debug("Arg markerDelay set to %d", markerDelay);
+  debug("Arg snapshotDelay set to %d", snapshotDelay);
+  debug("Arg tokenDelay set to %d", tokenDelay);
+  debug("Arg snapshotId set to %d", snapshotId);
+  debug("Arg starter set to %d", starter);
+
 }
