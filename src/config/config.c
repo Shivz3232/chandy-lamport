@@ -15,7 +15,7 @@ int tokenDelay = -1;
 int markerDelay = -1;
 int snapshotDelay = -1;
 int snapshotId = -1;
-int snapshotEnabled = 0;
+int starter = 0;
 
 // DEFAULTS
 char* cEnv = "development";

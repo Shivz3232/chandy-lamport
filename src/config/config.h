@@ -8,7 +8,7 @@ extern int tokenDelay;
 extern int markerDelay;
 extern int snapshotDelay;
 extern int snapshotId;
-extern int snapshotEnabled;
+extern int starter;
 
 extern char* cEnv;
 extern int processId;
