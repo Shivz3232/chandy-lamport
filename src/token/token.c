@@ -1,5 +1,6 @@
 #include "token.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,7 +10,10 @@
 #include "../queue/queue.h"
 #include "../peers/peers.h"
 
-void* passToken(void* input) {  
+void* passToken(void* input) {
+  state += 1;
+  info("{proc_id: %d, state: %d}", processId + 1, state);
+  
   struct Peer** peers = input;
   if (input == NULL) {
     debug("passToken: input NULL!!\n");
@@ -41,7 +45,7 @@ void* passToken(void* input) {
 
   struct Peer* successor = getSuccessor(peers);
 
-  debug("Sleeping for %d seconds before forwarding the token\n", tokenDelay);
+  debug("Sleeping for %0.2f seconds before forwarding the token\n", tokenDelay);
   sleep(tokenDelay);
   debug("Woke up, sending token\n");
   
@@ -57,6 +61,7 @@ void* passToken(void* input) {
     debug("Partial token was sent!!\n");
   } else {
     debug("Token forwarded successfully\n");
+    info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, predecessor->id + 1, successor->id + 1);
   }
 
   free(token);
@@ -65,6 +70,9 @@ void* passToken(void* input) {
 }
 
 void* startTokenPassing(void* input) {
+  state += 1;
+  info("{proc_id: %d, state: %d}", processId + 1, state);
+  
   struct Peer** peers = input;
   if (input == NULL) {
     debug("passToken: input NULL!!\n");
@@ -77,7 +85,7 @@ void* startTokenPassing(void* input) {
     return NULL;
   }
 
-  debug("Sleeping for %d seconds before forwarding the token\n", tokenDelay);
+  debug("Sleeping for %0.2f seconds before forwarding the token\n", tokenDelay);
   sleep(tokenDelay);
   debug("Woke up, sending token\n");
 
@@ -95,6 +103,7 @@ void* startTokenPassing(void* input) {
     debug("Partial token was sent!!\n");
   } else {
     debug("Token forwarded successfully\n");
+    info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, NULL, successor->id + 1);
   }
   
   return NULL;
