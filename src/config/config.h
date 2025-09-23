@@ -1,10 +1,12 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+extern int state;
+
 extern char* name;
 extern char* network;
 extern char* inputHostname;
-extern int tokenDelay;
+extern double tokenDelay;
 extern int markerDelay;
 extern int snapshotDelay;
 extern int snapshotId;

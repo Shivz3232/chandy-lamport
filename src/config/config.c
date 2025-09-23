@@ -13,7 +13,7 @@ int state = 0;
 char* name;
 char* network;
 char* inputHostname;
-int tokenDelay = -1;
+double tokenDelay = -1;
 int markerDelay = -1;
 int snapshotDelay = -1;
 int snapshotId = -1;

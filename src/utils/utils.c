@@ -147,7 +147,7 @@ void parseArgs(int argc, char* const argv[]) {
               break;
 
           case 't':
-              tokenDelay = atoi(optarg);
+              tokenDelay = atof(optarg);
               break;
 
           case 'm':
@@ -177,7 +177,7 @@ void parseArgs(int argc, char* const argv[]) {
   debug("Arg hostsFilePath set to %s", hostsFilePath);
   debug("Arg markerDelay set to %d", markerDelay);
   debug("Arg snapshotDelay set to %d", snapshotDelay);
-  debug("Arg tokenDelay set to %d", tokenDelay);
+  debug("Arg tokenDelay set to %0.2f", tokenDelay);
   debug("Arg snapshotId set to %d", snapshotId);
   debug("Arg starter set to %d", starter);
 
