@@ -28,19 +28,6 @@ void* populatePeerInfo(struct Peer* peer) {
   }
 
   peer->write_addr_info = addr_info;
-
-  int socket_fd;
-  for (struct addrinfo* p = addr_info; p != NULL; p = p->ai_next) {
-    if ((socket_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) {
-      perror("socket");
-      continue;
-    }
-
-    peer->write_chosen_addr_info = p;
-    peer->write_socket_fd = socket_fd;
-    
-    break;
-  }
   
   return NULL;
 }
@@ -128,6 +115,7 @@ void* dialPeers(void* input) {
         continue;
       }
 
+      peers[i]->write_socket_fd = socket_fd;
       peers[i]->write_chosen_addr_info = p;
 
       outboundConnections += 1;
