@@ -9,6 +9,7 @@
 #include "../logger/logger.h"
 #include "../queue/queue.h"
 #include "../peers/peers.h"
+#include "../utils/utils.h"
 
 void* passToken(void* input) {
   if (input == NULL) {
@@ -54,8 +55,8 @@ void* passToken(void* input) {
   debug("Woke up, sending token\n");
   
   int numBytesSent;
-  if ((numBytesSent = send(successor->write_socket_fd, token, strlen(token), 0)) < 0) {
-    debug("send: Failed. numBytesSent: %d\n", numBytesSent);
+  if ((numBytesSent = sendAll(successor->write_socket_fd, token, strlen(token))) < 0) {
+    debug("sendAll: Failed. numBytesSent: %d\n", numBytesSent);
     return NULL;
   }
 
@@ -95,9 +96,8 @@ void* startTokenPassing(void* input) {
 
   char token[] = "token";
   int numBytesSent;
-  if ((numBytesSent = send(successor->write_socket_fd, token, strlen(token), 0)) < 0) {
-    perror("send");
-    debug("send: Failed. numBytesSent: %d\n", numBytesSent);
+  if ((numBytesSent = sendAll(successor->write_socket_fd, token, strlen(token))) < 0) {
+    debug("sendAll: Failed. numBytesSent: %d\n", numBytesSent);
     return NULL;
   }
 

@@ -6,8 +6,10 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <poll.h>
+#include <types.h>
 
 #include <netdb.h>
+#include <sys/socket.h>
 
 #include "../config/config.h"
 #include "../peers/peers.h"
@@ -212,3 +214,25 @@ void* freePollFds(struct pollfd* pollFds) {
 
   return NULL;
 }
+
+int sendAll(int socketFd, char* buf, int len) {
+  int total = 0;
+
+  int n, bytesleft = len;
+  while(total < len) {
+    n = send(s, buf+total, bytesleft, 0);
+    if (n == -1) {
+      perror("send");
+      break;
+    };
+
+    total += n;
+    bytesleft -= n;
+  }
+
+  if (n == -1) {
+    return -1;
+  }
+
+  return total;
+} 

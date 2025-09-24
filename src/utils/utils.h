@@ -5,9 +5,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-int bindToBest(struct addrinfo* addr_info);
-void* parseHostsfile(struct Peer* peers[]);
 char* getNameInfo(struct sockaddr*, socklen_t*);
+int bindToBest(struct addrinfo* addr_info);
+int sendAll(int, char*, int);
+
+void* parseHostsfile(struct Peer* peers[]);
 void parseArgs(int, char* const*);
 
 struct pollfd* setupPollFds(struct Peer* peers[]);
