@@ -20,9 +20,7 @@ struct pollfd* pollFds;
 
 void* acceptConnections(void*);
 
-void* setupPollFds();
 void* startPolling();
-void* freePollFds();
 
 int main(int argc, char const* argv[]) {
   info("Process started\n");
@@ -54,22 +52,22 @@ int main(int argc, char const* argv[]) {
     getSuccessor(peers)->name
   );
 
-  struct addrinfo hints, *addr_info;
+  struct addrinfo hints, *addrInfo;
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  if (getaddrinfo(NULL, port, &hints, &addr_info) < 0) {
+  if (getaddrinfo(NULL, port, &hints, &addrInfo) < 0) {
     perror("getaddrinfo");
     exit(EXIT_FAILURE);
   }
 
   debug("============================================\n");
   debug("Creating self socket.\n");
-  int socket_fd;
-  if ((socket_fd = bindToBest(addr_info)) < 0) {
+  int socketFd;
+  if ((socketFd = bindToBest(addrInfo)) < 0) {
     perror("bindToBest");
     exit(2);
   }
@@ -78,7 +76,7 @@ int main(int argc, char const* argv[]) {
 
   debug("============================================\n");
   debug("Trying to listen.\n");
-  if (listen(socket_fd, backlog) < 0) {
+  if (listen(socketFd, backlog) < 0) {
     perror("listen");
     exit(EXIT_FAILURE);
   }
@@ -94,7 +92,7 @@ int main(int argc, char const* argv[]) {
 
   debug("============================================\n");
   pthread_t inboundConnectionsEstablishmentThread;
-  pthread_create(&inboundConnectionsEstablishmentThread, NULL, acceptConnections, &socket_fd);
+  pthread_create(&inboundConnectionsEstablishmentThread, NULL, acceptConnections, &socketFd);
   pthread_detach(inboundConnectionsEstablishmentThread);
   debug("Successfully started thread to establish inbound connections\n");
   debug("============================================\n\n\n\n");
@@ -108,15 +106,13 @@ int main(int argc, char const* argv[]) {
 
   debug("============================================\n");
   debug("Setting up pollFds\n");
-  setupPollFds();
+  pollFds = setupPollFds(peers);
   debug("Successfully setup pollFds\n");
   debug("============================================\n\n\n\n");  
 
-  
-
   if (starter) {
     debug("============================================\n");
-    debug("Starting token forwarding thread");
+    debug("Starting token forwarding thread\n");
     pthread_t tokenForwardingThread;
     pthread_create(&tokenForwardingThread, NULL, startTokenPassing, peers);
     pthread_detach(tokenForwardingThread);
@@ -133,9 +129,9 @@ int main(int argc, char const* argv[]) {
 
   debug("============================================\n");
   debug("Wrapping up\n");
-  freePollFds();
-  close(socket_fd);
-  freeaddrinfo(addr_info);
+  freePollFds(pollFds);
+  close(socketFd);
+  freeaddrinfo(addrInfo);
   freePeers(peers);
   debug("Processs finished\n");
   debug("============================================\n\n\n\n");
@@ -144,14 +140,14 @@ int main(int argc, char const* argv[]) {
 }
 
 void* acceptConnections(void* input) {
-  int socket_fd = *(int*)input;
+  int socketFd = *(int*)input;
   
   while (inboundConnections < numPeers - 1) {
     int peer_fd;
     struct sockaddr_storage peerAddr;
     socklen_t peerAddrLen = sizeof(peerAddr);
 
-    if ((peer_fd = accept(socket_fd, (struct sockaddr*)&peerAddr, &peerAddrLen)) < 0) {
+    if ((peer_fd = accept(socketFd, (struct sockaddr*)&peerAddr, &peerAddrLen)) < 0) {
       perror("accept");
       exit(EXIT_FAILURE);
     }
@@ -183,23 +179,6 @@ void* acceptConnections(void* input) {
     free(peerName);
 
     inboundConnections += 1;
-  }
-
-  return NULL;
-}
-
-void* setupPollFds() {
-  pollFds = malloc(sizeof(struct pollfd) * numPeers);
-
-  for (int i = 0; i < numPeers; i++) {
-    if (i == processId) {
-      pollFds[i].fd = -1;
-      pollFds[i].events = 0;
-      pollFds[i].revents = 0;
-    } else {
-      pollFds[i].fd = peers[i]->read_socket_fd;
-      pollFds[i].events = POLLIN | POLLHUP;
-    }
   }
 
   return NULL;
@@ -263,13 +242,3 @@ void* startPolling() {
 
   return NULL;
 }
-
-void* freePollFds() {
-  if (pollFds) {
-    free(pollFds);
-    pollFds = NULL;
-  }
-
-  return NULL;
-}
-

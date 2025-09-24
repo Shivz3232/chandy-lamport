@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <poll.h>
 
 #include <netdb.h>
 
@@ -99,7 +100,7 @@ char* getNameInfo(struct sockaddr* peerAddr, socklen_t* peerAddrLen) {
   if (!peerName) {
     perror("malloc");
     exit(EXIT_FAILURE);
-}
+  }
 
   if (getnameinfo(peerAddr, *peerAddrLen, peerName, maxPeerNameSize, NULL, 0, NI_NAMEREQD) < 0) {
     perror("getnameinfo");
@@ -181,4 +182,33 @@ void parseArgs(int argc, char* const argv[]) {
   debug("Arg snapshotId set to %d", snapshotId);
   debug("Arg starter set to %d", starter);
 
+}
+
+struct pollfd* setupPollFds(struct Peer* peers[]) {
+  struct pollfd* pollFds = malloc(sizeof(struct pollfd) * numPeers);
+  if (pollFds == NULL) {
+    return NULL;
+  }
+
+  for (int i = 0; i < numPeers; i++) {
+    if (i == processId) {
+      pollFds[i].fd = -1;
+      pollFds[i].events = 0;
+      pollFds[i].revents = 0;
+    } else {
+      pollFds[i].fd = peers[i]->read_socket_fd;
+      pollFds[i].events = POLLIN | POLLHUP;
+    }
+  }
+
+  return pollFds;
+}
+
+void* freePollFds(struct pollfd* pollFds) {
+  if (pollFds) {
+    free(pollFds);
+    pollFds = NULL;
+  }
+
+  return NULL;
 }
