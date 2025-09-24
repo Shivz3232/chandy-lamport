@@ -194,7 +194,7 @@ void* startPolling() {
       info("Poll timed out?!\n");
       return NULL;
     } else {
-      for (int j = 0, seen = 0; seen == numEvents || j < numPeers; j++) {
+      for (int j = 0, seen = 0; seen != numEvents && j < numPeers; j++) {
         if (pollFds[j].revents == 0) continue;
 
         if (j == processId) {
@@ -202,17 +202,20 @@ void* startPolling() {
           continue;
         }
 
-        if (j < numPeers && (pollFds[j].revents & POLLIN)) {
-          debug("Poll: POLLIN event for process %d\n", j + 1);
+        if (pollFds[j].revents & POLLIN) {
+          debug("Poll: POLLIN event from peer %d\n", j + 1);
+
           int numBytes;
           char* buf = malloc(maxMessageSize);
 
           if((numBytes = recv(peers[j]->read_socket_fd, buf, maxMessageSize - 1, 0)) < 0) {
             debug("recv: Failed! numBytes: %d\n", numBytes);
+            continue;
           }
 
           if (numBytes == 0) {
             debug("Peer %d closed the connection. numBytes: 0!!\n", j);
+            continue;
           }
 
           buf[numBytes] = '\0';
@@ -231,8 +234,8 @@ void* startPolling() {
         }
 
         if (pollFds[j].revents & POLLHUP) {
-          debug("Poll: POLLHUP event for process %d\n", j + 1);
-          // handle closed socket
+          debug("Poll: POLLHUP event from peer %d\n", j + 1);
+          return NULL;
         }
 
         seen += 1;
