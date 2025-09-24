@@ -11,17 +11,18 @@
 #include "../peers/peers.h"
 
 void* passToken(void* input) {
-  state += 1;
-  info("{proc_id: %d, state: %d}", processId + 1, state);
-  
-  struct Peer** peers = input;
   if (input == NULL) {
     debug("passToken: input NULL!!\n");
     return NULL;
   }
+  
+  state += 1;
+  info("{proc_id: %d, state: %d}", processId + 1, state);
+  
+  struct Peer** peers = input;
 
   struct Peer* predecessor = getPredecessor(peers);
-  if (input == NULL) {
+  if (predecessor == NULL) {
     debug("passToken: predecessor NULL!!\n");
     return NULL;
   }
@@ -37,16 +38,19 @@ void* passToken(void* input) {
     return NULL;
   }
 
-  int dequeued = dequeue(predecessor->read_channel);
-  if (dequeued != 1) {
+  if (dequeue(predecessor->read_channel) < 0) {
     debug("dequeue: Failed to dequeue token!!\n");
     return NULL;
   }
 
   struct Peer* successor = getSuccessor(peers);
+  if (successor == NULL) {
+    debug("passToken: successor NULL!!\n");
+    return NULL;
+  }
 
   debug("Sleeping for %0.2f seconds before forwarding the token\n", tokenDelay);
-  sleep(tokenDelay);
+  usleep(tokenDelay * 1000000);
   debug("Woke up, sending token\n");
   
   int numBytesSent;
@@ -86,7 +90,7 @@ void* startTokenPassing(void* input) {
   }
 
   debug("Sleeping for %0.2f seconds before forwarding the token\n", tokenDelay);
-  sleep(tokenDelay);
+  usleep(tokenDelay * 1000000);
   debug("Woke up, sending token\n");
 
   char token[] = "token";
