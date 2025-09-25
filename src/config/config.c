@@ -16,7 +16,7 @@ char* inputHostname;
 double tokenDelay = -1;
 int markerDelay = -1;
 int snapshotDelay = -1;
-int snapshotId = -1;
+char* snapshotId = "";
 int starter = 0;
 
 // DEFAULTS

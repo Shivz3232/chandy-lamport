@@ -162,7 +162,7 @@ void parseArgs(int argc, char* const argv[]) {
               break;
 
           case 'p':
-              snapshotId = atoi(optarg);
+              snapshotId = strdup(optarg);
               break;
 
           case 'x':

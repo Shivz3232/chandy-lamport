@@ -9,7 +9,7 @@ extern char* inputHostname;
 extern double tokenDelay;
 extern int markerDelay;
 extern int snapshotDelay;
-extern int snapshotId;
+extern char* snapshotId;
 extern int starter;
 
 extern char* cEnv;
