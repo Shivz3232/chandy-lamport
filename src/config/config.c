@@ -34,6 +34,7 @@ int maxPeers = 100;
 int maxMessageSize = 100;
 int packetHeaderSize = 1;
 int maxPacketSize = 100;
+int maxSnapshotChannelSize = 100;
 
 void* initializeCEnv();
 void* initializeHostName();
@@ -48,6 +49,7 @@ void* initializeMaxPeers();
 void* initializeMaxMessageSize();
 void* initializePacketHeaderSize();
 void* initializeMaxPacketSize();
+void* initializeMaxSnapshotChannelSize();
 
 void* initializeEnvVariables() {
   initializeCEnv();
@@ -63,6 +65,7 @@ void* initializeEnvVariables() {
   initializeMaxMessageSize();
   initializePacketHeaderSize();
   initializeMaxPacketSize();
+  initializeMaxSnapshotChannelSize();
 
   return NULL;
 }
@@ -233,6 +236,19 @@ void* initializeMaxPacketSize() {
   } else {
     maxPacketSize = atoi(value);
     debug("MAX_PACKET_SIZE set to %d", maxPacketSize);
+  }
+  
+  return NULL;
+}
+
+void* initializeMaxSnapshotChannelSize() {
+  char* value = getenv("MAX_CHANNEL_SIZE");
+
+  if (!value) {
+    debug("MAX_CHANNEL_SIZE not found, defaulting to: %d", maxSnapshotChannelSize);
+  } else {
+    maxSnapshotChannelSize = atoi(value);
+    debug("MAX_CHANNEL_SIZE set to %d", maxSnapshotChannelSize);
   }
   
   return NULL;

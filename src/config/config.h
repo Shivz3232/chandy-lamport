@@ -26,6 +26,7 @@ extern int maxPeers;
 extern int maxMessageSize;
 extern int packetHeaderSize;
 extern int maxPacketSize;
+extern int maxSnapshotChannelSize;
 
 void* initializeEnvVariables();
 
