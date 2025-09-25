@@ -14,13 +14,16 @@
 #include "logger/logger.h"
 #include "token/token.h"
 #include "queue/queue.h"
+#include "snapshot/snapshot.h"
 
 struct Peer** peers;
 struct pollfd* pollFds;
+struct Snapshot* snapshots;
 
 void* acceptConnections(void*);
-
 void* startPolling();
+void* startPollingV2();
+void* step(int numEvents);
 
 int main(int argc, char const* argv[]) {
   info("Process started\n");
@@ -123,7 +126,7 @@ int main(int argc, char const* argv[]) {
   // NOTE THIS IS A BLOCKING STEP
   debug("============================================\n");
   debug("Starting polling\n");
-  startPolling();
+  startPollingV2();
   debug("Stopped polling\n");
   debug("============================================\n\n\n\n");  
 
@@ -184,8 +187,8 @@ void* acceptConnections(void* input) {
   return NULL;
 }
 
-void* startPolling() {
-  while (1) {
+void* startPollingV2() {
+  while(1) {
     int numEvents = poll(pollFds, numPeers, -1);
 
     debug("Poll: received %d events\n", numEvents);
@@ -193,45 +196,30 @@ void* startPolling() {
     if (numEvents == 0) {
       info("Poll timed out?!\n");
       return NULL;
-    } else {
-      for (int j = 0, seen = 0; seen != numEvents && j < numPeers; j++) {
-        if (pollFds[j].revents == 0) continue;
-
-        if (j == processId) {
-          debug("Ignoring poll event from self\n");
-          continue;
-        }
-
-        if (pollFds[j].revents & POLLIN) {
-          debug("Poll: POLLIN event from peer %d\n", j + 1);
-
-          char* data = receivePacket(peers[j]->read_socket_fd);
-          if (data == NULL) {
-            debug("receivePacket: Failed!\n");
-            continue;
-          }
-
-          debug("Peer %s says: %s, message size: %d\n", peers[j]->name, data, strlen(data));
-
-          enqueue(peers[j]->read_channel, data);
-
-          debug("============================================\n");
-          debug("Starting token forwarding thread");
-          pthread_t tokenForwardingThread;
-          pthread_create(&tokenForwardingThread, NULL, passToken, peers);
-          pthread_detach(tokenForwardingThread);
-          debug("Successfully started thread to forward token\n");
-          debug("============================================\n\n\n\n");
-        }
-
-        if (pollFds[j].revents & POLLHUP) {
-          debug("Poll: POLLHUP event from peer %d\n", j + 1);
-          return NULL;
-        }
-
-        seen += 1;
-      }
     }
+
+    step(numEvents);
+
+    processSnapshots(&snapshots, peers);
+
+    // Marker messages should be removed from any channel before this call.
+    passToken(peers);
+  }
+
+  return NULL;
+}
+
+void* step(int numEvents) {
+  for (int i = 0, seen = 0; seen <= numEvents && i < numPeers; i++) {
+    if (i == processId || !(pollFds[i].revents & POLLIN)) continue;
+
+    char* data = receivePacket(peers[i]->read_socket_fd);
+    if (data == NULL) {
+      debug("receivePacket: Failed!\n");
+      continue;
+    }
+
+    enqueue(peers[i]->read_channel, data);
   }
 
   return NULL;
