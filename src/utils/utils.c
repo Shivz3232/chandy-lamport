@@ -6,9 +6,9 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <poll.h>
-#include <types.h>
 
 #include <netdb.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 
 #include "../config/config.h"
@@ -80,7 +80,7 @@ void* parseHostsfile(struct Peer* peers[]) {
       exit(EXIT_FAILURE);
     }
 
-    peer->id = numPeers + 1;
+    peer->id = numPeers;
     peer->name = strdup(line);
     
     peer->read_channel = malloc(sizeof(Queue));
@@ -215,12 +215,38 @@ void* freePollFds(struct pollfd* pollFds) {
   return NULL;
 }
 
+char* createPacket(char* content) {
+  int contentSize = strlen(content);
+  
+  if (contentSize > maxPacketSize) {
+      fprintf(stderr, "Content too large for packet\n");
+      return NULL;
+  }
+
+  int totalSize = packetHeaderSize + contentSize;
+  char* packet = malloc(totalSize + 1);
+  if (packet == NULL) {
+    perror("malloc");
+    return NULL;
+  }
+
+  // Format header as zero-padded ASCII number of fixed width
+  // e.g., if packetHeaderSize = 8, "00000042"
+  snprintf(packet, packetHeaderSize + 1, "%0*d", packetHeaderSize, contentSize);
+
+  memcpy(packet + packetHeaderSize, content, contentSize);
+
+  packet[totalSize] = '\0';
+
+  return packet;
+}
+
 int sendAll(int socketFd, char* buf, int len) {
   int total = 0;
 
   int n, bytesleft = len;
   while(total < len) {
-    n = send(s, buf+total, bytesleft, 0);
+    n = send(socketFd, buf + total, bytesleft, 0);
     if (n == -1) {
       perror("send");
       break;
@@ -236,3 +262,66 @@ int sendAll(int socketFd, char* buf, int len) {
 
   return total;
 } 
+
+char* receivePacket(int socketFd) {
+  char* header = malloc(packetHeaderSize + 1);
+  if (header == NULL) {
+    perror("malloc");
+    return NULL;
+  }
+  
+  if (receiveAll(socketFd, header, packetHeaderSize) < 0) {
+    perror("receiveAll");
+    free(header);
+    return NULL;
+  }
+
+  header[packetHeaderSize] = '\0';
+
+  char *endptr;
+  long inferredContentSize = strtol(header, &endptr, 10);
+  if (*endptr != '\0' || inferredContentSize <= 0 || inferredContentSize > maxPacketSize) {
+    info("Invalid packet size in header: %s\n", header);
+    return NULL;
+  }
+
+  debug("receivePacket: inferredContentSize: %ld\n", inferredContentSize);
+
+  char* content = malloc(inferredContentSize + 1);
+  if (content == NULL) {
+    perror("malloc");
+    return NULL;
+  }
+
+  if (receiveAll(socketFd, content, (int)inferredContentSize) < 0) {
+    perror("receiveAll");
+    free(content);
+    return NULL;
+  }
+
+  content[inferredContentSize] = '\0';
+
+  free(header);
+
+  return content;
+}
+
+int receiveAll(int socketFd, char* buf, int toBeReceived) {
+  for (int received = 0; received != toBeReceived;) {
+    int n = recv(socketFd, buf + received, toBeReceived - received, 0);
+
+    if (n < 0) {
+      perror("recv");
+      return n;
+    } else if (n == 0) {
+      info("Connection closed while receiving!\n");
+      return 0;
+    }
+
+    received += n;
+
+    debug("recv got %d bytes, total %d/%d\n", n, received, toBeReceived);
+  }
+
+  return toBeReceived;
+}
