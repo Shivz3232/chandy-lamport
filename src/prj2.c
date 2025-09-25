@@ -205,24 +205,15 @@ void* startPolling() {
         if (pollFds[j].revents & POLLIN) {
           debug("Poll: POLLIN event from peer %d\n", j + 1);
 
-          int numBytes;
-          char* buf = malloc(maxMessageSize);
-
-          if((numBytes = recv(peers[j]->read_socket_fd, buf, maxMessageSize - 1, 0)) < 0) {
-            debug("recv: Failed! numBytes: %d\n", numBytes);
+          char* data = receivePacket(peers[j]->read_socket_fd);
+          if (data == NULL) {
+            debug("receivePacket: Failed!\n");
             continue;
           }
 
-          if (numBytes == 0) {
-            debug("Peer %d closed the connection. numBytes: 0!!\n", j);
-            continue;
-          }
+          debug("Peer %s says: %s, message size: %d\n", peers[j]->name, data, strlen(data));
 
-          buf[numBytes] = '\0';
-
-          debug("Peer %d says: %s\n", peers[j]->name, buf);
-
-          enqueue(peers[j]->read_channel, buf);
+          enqueue(peers[j]->read_channel, data);
 
           debug("============================================\n");
           debug("Starting token forwarding thread");

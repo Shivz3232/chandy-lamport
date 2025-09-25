@@ -54,8 +54,9 @@ void* passToken(void* input) {
   usleep(tokenDelay * 1000000);
   debug("Woke up, sending token\n");
   
+  char* packet = createPacket(token);
   int numBytesSent;
-  if ((numBytesSent = sendAll(successor->write_socket_fd, token, strlen(token))) < 0) {
+  if ((numBytesSent = sendAll(successor->write_socket_fd, packet, packetHeaderSize + strlen(token))) < 0) {
     debug("sendAll: Failed. numBytesSent: %d\n", numBytesSent);
     return NULL;
   }
@@ -65,7 +66,7 @@ void* passToken(void* input) {
   } else if (numBytesSent < strlen(token)) {
     debug("Partial token was sent!!\n");
   } else {
-    debug("Token forwarded successfully\n");
+    debug("Token forwarded successfully (sent %d bytes).\n", numBytesSent);
     info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, predecessor->id + 1, successor->id + 1);
   }
 
@@ -94,9 +95,9 @@ void* startTokenPassing(void* input) {
   usleep(tokenDelay * 1000000);
   debug("Woke up, sending token\n");
 
-  char token[] = "token";
+  char* token = createPacket("token");
   int numBytesSent;
-  if ((numBytesSent = sendAll(successor->write_socket_fd, token, strlen(token))) < 0) {
+  if ((numBytesSent = sendAll(successor->write_socket_fd, token, packetHeaderSize + strlen("token"))) < 0) {
     debug("sendAll: Failed. numBytesSent: %d\n", numBytesSent);
     return NULL;
   }
@@ -106,8 +107,8 @@ void* startTokenPassing(void* input) {
   } else if (numBytesSent < strlen(token)) {
     debug("Partial token was sent!!\n");
   } else {
-    debug("Token forwarded successfully\n");
-    info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, NULL, successor->id + 1);
+    debug("Token forwarded successfully (sent %d bytes)\n", numBytesSent);
+    info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, processId + 1, successor->id + 1);
   }
   
   return NULL;
