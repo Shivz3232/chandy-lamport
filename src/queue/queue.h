@@ -4,7 +4,6 @@
 typedef struct {
   int front;
   int rear;
-  int closed;
   char** items;
 } Queue;
 
