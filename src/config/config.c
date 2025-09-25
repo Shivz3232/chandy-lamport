@@ -32,6 +32,8 @@ char* hostsFilePath = "hostsfile.txt";
 int maxPeerNameSize = 100;
 int maxPeers = 100;
 int maxMessageSize = 100;
+int packetHeaderSize = 1;
+int maxPacketSize = 100;
 
 void* initializeCEnv();
 void* initializeHostName();
@@ -44,6 +46,8 @@ void* initializeHostsFilePath();
 void* initializeMaxPeerNameSize();
 void* initializeMaxPeers();
 void* initializeMaxMessageSize();
+void* initializePacketHeaderSize();
+void* initializeMaxPacketSize();
 
 void* initializeEnvVariables() {
   initializeCEnv();
@@ -57,6 +61,8 @@ void* initializeEnvVariables() {
   initializeHostName();
   initializeMaxPeers();
   initializeMaxMessageSize();
+  initializePacketHeaderSize();
+  initializeMaxPacketSize();
 
   return NULL;
 }
@@ -201,6 +207,32 @@ void* initializeMaxMessageSize() {
   } else {
     maxMessageSize = atoi(value);
     debug("MAX_MESSAGE_SIZE set to %d", maxMessageSize);
+  }
+  
+  return NULL;
+}
+
+void* initializePacketHeaderSize() {
+  char* value = getenv("PACKET_HEADER_SIZE");
+
+  if (!value) {
+    debug("PACKET_HEADER_SIZE not found, defaulting to: %d", packetHeaderSize);
+  } else {
+    packetHeaderSize = atoi(value);
+    debug("PACKET_HEADER_SIZE set to %d", packetHeaderSize);
+  }
+  
+  return NULL;
+}
+
+void* initializeMaxPacketSize() {
+  char* value = getenv("MAX_PACKET_SIZE");
+
+  if (!value) {
+    debug("MAX_PACKET_SIZE not found, defaulting to: %d", maxPacketSize);
+  } else {
+    maxPacketSize = atoi(value);
+    debug("MAX_PACKET_SIZE set to %d", maxPacketSize);
   }
   
   return NULL;

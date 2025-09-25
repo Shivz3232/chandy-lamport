@@ -24,6 +24,8 @@ extern char* hostsFilePath;
 extern int maxPeerNameSize;
 extern int maxPeers;
 extern int maxMessageSize;
+extern int packetHeaderSize;
+extern int maxPacketSize;
 
 void* initializeEnvVariables();
 
