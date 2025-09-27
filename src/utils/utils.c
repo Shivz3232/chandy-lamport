@@ -315,7 +315,7 @@ int receiveAll(int socketFd, char* buf, int toBeReceived) {
       return n;
     } else if (n == 0) {
       info("Connection closed while receiving!\n");
-      return 0;
+      return -1;
     }
 
     received += n;
