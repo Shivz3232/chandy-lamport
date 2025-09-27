@@ -215,6 +215,33 @@ void* freePollFds(struct pollfd* pollFds) {
   return NULL;
 }
 
+const char* pollReventsToStr(short revents) {
+  // static buffer (not thread-safe!)
+  static char buf[128];
+  buf[0] = '\0';
+
+  if (revents == 0) {
+    return "NONE";
+  }
+
+  if (revents & POLLIN)   strcat(buf, "POLLIN ");
+  if (revents & POLLOUT)  strcat(buf, "POLLOUT ");
+  if (revents & POLLERR)  strcat(buf, "POLLERR ");
+  if (revents & POLLHUP)  strcat(buf, "POLLHUP ");
+  if (revents & POLLNVAL) strcat(buf, "POLLNVAL ");
+  #ifdef POLLPRI
+    if (revents & POLLPRI)  strcat(buf, "POLLPRI ");
+  #endif
+
+  // trim trailing space
+  size_t len = strlen(buf);
+  if (len > 0 && buf[len - 1] == ' ') {
+    buf[len - 1] = '\0';
+  }
+
+  return buf;
+}
+
 char* createPacket(char* content) {
   int contentSize = strlen(content);
   

@@ -16,6 +16,7 @@ void* parseHostsfile(struct Peer* peers[]);
 void parseArgs(int, char* const*);
 
 struct pollfd* setupPollFds(struct Peer* peers[]);
+const char* pollReventsToStr(short revents);
 void* freePollFds(struct pollfd*);
 
 #endif
