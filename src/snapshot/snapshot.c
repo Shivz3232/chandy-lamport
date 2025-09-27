@@ -63,8 +63,8 @@ struct Snapshot* createNewSnapshotObj(char* snapshotId) {
   return snapshot;
 }
 
-void* processExistingSnapshots(struct Snapshot* snapshots, struct Peer** peers) {
-  struct Snapshot* temp = snapshots;
+void* processExistingSnapshots(struct Snapshot** snapshots, struct Peer** peers) {
+  struct Snapshot* temp = *snapshots;
   while (temp != NULL) {
     debug("============================================\n");
     debug("Processing existing snapshot with id %s\n", temp->id);
@@ -72,12 +72,29 @@ void* processExistingSnapshots(struct Snapshot* snapshots, struct Peer** peers) 
     debug("Successfully processed existing snapshot with id %s\n", temp->id);
     debug("============================================\n\n\n\n");
 
+    if (temp->closedChannels == numPeers - 1) {
+      char* id = strdup(temp->id);
+      temp = temp->next;
+      
+      debug("============================================\n");
+      debug("Snapshot %s finished, removing from list\n", id);
+      deleteById(snapshots, id);
+      info("{proc_id:%d, snapshot_id: %s, snapshot:\"complete\"}\n", processId + 1, id);
+      debug("Successfully removed snapshot %s from list\n", id);
+      debug("============================================\n\n\n\n");
+
+      free(id);
+
+      continue;
+    }
+
     temp = temp->next;
   }
   
   return NULL;
 }
 
+// Copying peer.read_channels content into snapshot channels
 void* processExistingSnapshot(struct Snapshot* snapshot, struct Peer** peers) {
   for (int i = 0; i < numPeers; i++) {
     if (i == processId) continue;
@@ -86,7 +103,13 @@ void* processExistingSnapshot(struct Snapshot* snapshot, struct Peer** peers) {
     char* front = peek(peers[i]->read_channel);
 
     if (strcmp(front, snapshot->id) == 0) {
+      if (snapshot->channelStates[i]->closed == 1) {
+        debug("processExistingSnapshot: received same marker \"%s\" on an already closed channel!!", front);
+        continue;
+      }
+      
       snapshot->channelStates[i]->closed = 1;
+      snapshot->closedChannels += 1;
       debug("processExistingSnapshot: closed channel %d for snapshot \"%s\"\n", i + 1, snapshot->id);
       info("{proc_id:%d, snapshot_id: %s, snapshot:\"channel closed\", channel:%d-%d, queue:[%s]}",
         processId + 1,
@@ -102,6 +125,8 @@ void* processExistingSnapshot(struct Snapshot* snapshot, struct Peer** peers) {
 
       continue;
     }
+
+    if (snapshot->channelStates[i]->closed == 1) continue;
 
     snapshot->channelStates[i]->channelContent[
       snapshot->channelStates[i]->channelSize
@@ -221,7 +246,6 @@ void deleteById(struct Snapshot** head, const char* snapshotId) {
   }
 
   free(temp->id);
-
   free(temp);
 }
 
@@ -234,4 +258,14 @@ void freeSnapshotsList(struct Snapshot* head) {
 
     free(temp);
   }
+}
+
+int countSnapshots(struct Snapshot* head) {
+    int count = 0;
+    struct Snapshot* current = head;
+    while (current != NULL) {
+        count++;
+        current = current->next;
+    }
+    return count;
 }

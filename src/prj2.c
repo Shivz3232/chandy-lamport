@@ -200,7 +200,7 @@ void* startPollingV2() {
       debug("============================================\n\n\n\n");
 
       snapshotInitiated = 1;
-      info("{proc_id:%d, snapshot_id: %s, snapshot:\"started\"}", processId, snapshotId);
+      info("{proc_id:%d, snapshot_id: %s, snapshot:\"started\"}", processId + 1, snapshotId);
     }
     
     int numEvents = poll(pollFds, numPeers, -1);
@@ -225,8 +225,8 @@ void* startPollingV2() {
     debug("============================================\n\n\n\n");
 
     debug("============================================\n");
-    debug("Processing existing snapshots\n");
-    processExistingSnapshots(snapshots, peers);
+    debug("Processing %d existing snapshots\n", countSnapshots(snapshots));
+    processExistingSnapshots(&snapshots, peers);
     debug("Successfully processed existing snapshots\n");
     debug("============================================\n\n\n\n");
 
@@ -295,6 +295,7 @@ void* stepReadChannels() {
       passToken(peers);
     } else {
       dequeue(peers[i]->read_channel);
+      debug("stepReadChannels: dequed \"%s\" from peer %d's read channel\n", front, peers[i]->id + 1);
       free(front);
     }
   }

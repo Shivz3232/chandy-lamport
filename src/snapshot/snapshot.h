@@ -20,7 +20,7 @@ struct Snapshot {
 
 void* checkForNewSnapshots(struct Snapshot** snapshots, struct Peer** peers);
 struct Snapshot* createNewSnapshotObj(char* snapshotId);
-void* processExistingSnapshots(struct Snapshot* snapshots, struct Peer** peers);
+void* processExistingSnapshots(struct Snapshot** snapshots, struct Peer** peers);
 void* processExistingSnapshot(struct Snapshot* snapshot, struct Peer** peers);
 
 struct Snapshot* initiateSnapshot(struct Snapshot** head, struct Peer** peers);
@@ -31,5 +31,6 @@ void insertAtTail(struct Snapshot**, struct Snapshot* s);
 struct Snapshot* searchById(struct Snapshot*, const char*);
 void deleteById(struct Snapshot**, const char*);
 void freeSnapshotsList(struct Snapshot*);
+int countSnapshots(struct Snapshot* head);
 
 #endif
