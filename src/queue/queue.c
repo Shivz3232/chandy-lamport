@@ -1,5 +1,6 @@
 #include "queue.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "../config/config.h"
@@ -9,6 +10,10 @@ void initializeQueue(Queue* q) {
   q->items = malloc(sizeof(char *) * channelSize);
   q->front = -1;
   q->rear = 0;
+  if (pthread_mutex_init(&q->lock, NULL) != 0) {
+    perror("pthread_mutex_init");
+    exit(EXIT_FAILURE);
+  }
 }
 
 int isEmpty(Queue* q) {
