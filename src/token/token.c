@@ -39,6 +39,9 @@ void* passToken(void* input) {
     return NULL;
   }
 
+  state += 1;
+  info("{proc_id: %d, state: %d}", processId + 1, state);
+
   if (dequeue(predecessor->read_channel) < 0) {
     debug("dequeue: Failed to dequeue token!!\n");
     return NULL;
@@ -67,10 +70,11 @@ void* passToken(void* input) {
     debug("Partial token was sent!!\n");
   } else {
     debug("Token forwarded successfully (sent %d bytes).\n", numBytesSent);
-    info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, predecessor->id + 1, successor->id + 1);
+    info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, processId + 1, successor->id + 1);
   }
 
   free(token);
+  free(packet);
   
   return NULL;
 }
