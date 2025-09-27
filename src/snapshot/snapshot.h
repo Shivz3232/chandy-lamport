@@ -18,9 +18,13 @@ struct Snapshot {
   struct Snapshot* next;
 };
 
-void* processSnapshots(struct Snapshot**, struct Peer**);
-void* processSnapshot(struct Snapshot**, struct Snapshot*, struct Peer**);
-struct Snapshot* newSnapshot(struct Peer*);
+void* checkForNewSnapshots(struct Snapshot** snapshots, struct Peer** peers);
+struct Snapshot* createNewSnapshotObj(char* snapshotId);
+void* processExistingSnapshots(struct Snapshot* snapshots, struct Peer** peers);
+void* processExistingSnapshot(struct Snapshot* snapshot, struct Peer** peers);
+
+struct Snapshot* initiateSnapshot(struct Snapshot** head, struct Peer** peers);
+void* broadcastMarker(char* snapshotId, struct Peer** peers);
 
 void insertAtHead(struct Snapshot**, struct Snapshot* s);
 void insertAtTail(struct Snapshot**, struct Snapshot* s);

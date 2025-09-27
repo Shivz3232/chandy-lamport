@@ -2,105 +2,176 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "../config/config.h"
 #include "../logger/logger.h"
 #include "../queue/queue.h"
 #include "../peers/peers.h"
-#include "../snapshot/snapshot.h"
+#include "../utils/utils.h"
 
-void* processSnapshots(struct Snapshot** snapshots, struct Peer** peers) {
-  // Check if there are any marker messages.
-  struct Snapshot* temp = *snapshots;
-  while (temp != NULL) {
-    processSnapshot(snapshots, temp, peers);
-    temp = temp->next;
-  }
-
-  // Check for new snapshots
+void* checkForNewSnapshots(struct Snapshot** snapshots, struct Peer** peers) {
   for (int i = 0; i < numPeers; i++) {
     if (i == processId) continue;
     if (isEmpty(peers[i]->read_channel)) continue;
-    if (strcmp(peek(peers[i]->read_channel), "token") == 0 ) continue;
 
-    struct Snapshot* snapshot = newSnapshot(peers[i]);
-    
-    insertAtTail(snapshots, snapshot);
+    char* front = peek(peers[i]->read_channel);
+    if (strcmp(front, "token") == 0) continue;
 
-    processSnapshot(snapshots, snapshot, peers);
+    struct Snapshot* existingSnapshot = searchById(*snapshots, front);
+    if (existingSnapshot != NULL) continue;
+
+    debug("============================================\n");
+    debug("Creating new snapshot obj with id %s\n", front);
+    struct Snapshot* newSnapshot = createNewSnapshotObj(front);
+    debug("Successfully created new snapshot obj with id %s\n", newSnapshot->id);
+    debug("============================================\n\n\n\n");
+
+    debug("============================================\n");
+    debug("Inserting new snapshot %s to list\n", newSnapshot->id);
+    insertAtTail(snapshots, newSnapshot);
+    debug("Successfully inserted snapshot %s to list\n", newSnapshot->id);
+    debug("============================================\n\n\n\n");
+
+    debug("============================================\n");
+    debug("Sleeping for %0.2f before broadcasting marker %s\n", markerDelay, newSnapshot->id);
+    usleep(markerDelay * 1000000);
+    debug("Woke up broadcasting marker %s\n", newSnapshot->id);
+    debug("============================================\n\n\n\n");
+
+    broadcastMarker(newSnapshot->id, peers);
   }
 
   return NULL;
 }
 
-void* processSnapshot(struct Snapshot** head, struct Snapshot* snapshot, struct Peer** peers) {
-  debug("processSnapshot: Processing snapshot %s\n", snapshot->id);
-  
-  for (int i = 0; i < numPeers; i++) {
-    int markerSeen = 0;
-    
-    if (snapshot->channelStates[i]->closed) continue;
-    if (isEmpty(peers[i]->read_channel)) continue;
-
-    // COPY EVERYTHING FROM THE QUEUE TO THE CHANNEL
-    for (int j = 0; j < peers[i]->read_channel->rear; j++) {
-      if (strcmp(snapshot->id, peers[i]->read_channel->items[j]) == 0) {
-        markerSeen = 1;
-        break;
-      }
-
-      snapshot->channelStates[i]->channelContent[
-        snapshot->channelStates[i]->channelSize
-      ] = strdup(peers[i]->read_channel->items[j]);
-    }
-
-    if (markerSeen) {
-      snapshot->channelStates[i]->closed = 1;
-      snapshot->closedChannels += 1;
-    }
-  }
-
-  if (snapshot->closedChannels == numPeers) {
-    info("{proc_id:%d, snapshot_id: %d, snapshot:\"complete\"}\n", processId + 1, snapshot->id);
-    deleteById(head, snapshot->id);
-  }
-
-  return NULL;
-}
-
-struct Snapshot* newSnapshot(struct Peer* peer) {
+struct Snapshot* createNewSnapshotObj(char* snapshotId) {
   struct Snapshot* snapshot = malloc(sizeof(struct Snapshot));
 
-  snapshot->id = strdup(peek(peer->read_channel));
+  snapshot->id = strdup(snapshotId);
   snapshot->processState = state;
-  snapshot->channelStates = malloc(sizeof(struct ChannelState*) * numPeers);
+  snapshot->channelStates = malloc(sizeof(struct ChannelState*) * numPeers - 1);
+  snapshot->closedChannels = 0;
 
   for (int i = 0; i < numPeers; i++) {
     snapshot->channelStates[i] = malloc(sizeof(struct ChannelState));
     snapshot->channelStates[i]->channelSize = 0;
     snapshot->channelStates[i]->channelContent = malloc(sizeof(char*) * maxSnapshotChannelSize);
-    snapshot->closedChannels = 0;
-
-    if (i == peer->id) {
-      snapshot->channelStates[i]->closed = 1;
-      snapshot->closedChannels += 1;
-
-      info("{proc_id:%d, snapshot_id: %s, snapshot:\"channel closed\", channel:%d-%d, queue:[]}",
-        processId + 1,
-        snapshot->id,
-        peer->id + 1,
-        processId + 1
-      );
-    } else {
-      snapshot->channelStates[i]->closed = 0;
-    }
+    snapshot->channelStates[i]->closed = 0;
   }
 
-  dequeue(peer->read_channel);
-
-  debug("newSnapshot: Created new snapshot %s\n", snapshot->id);
-
   return snapshot;
+}
+
+void* processExistingSnapshots(struct Snapshot* snapshots, struct Peer** peers) {
+  struct Snapshot* temp = snapshots;
+  while (temp != NULL) {
+    debug("============================================\n");
+    debug("Processing existing snapshot with id %s\n", temp->id);
+    processExistingSnapshot(temp, peers);
+    debug("Successfully processed existing snapshot with id %s\n", temp->id);
+    debug("============================================\n\n\n\n");
+
+    temp = temp->next;
+  }
+  
+  return NULL;
+}
+
+void* processExistingSnapshot(struct Snapshot* snapshot, struct Peer** peers) {
+  for (int i = 0; i < numPeers; i++) {
+    if (i == processId) continue;
+    if (isEmpty(peers[i]->read_channel)) continue;
+    
+    char* front = peek(peers[i]->read_channel);
+
+    if (strcmp(front, snapshot->id) == 0) {
+      snapshot->channelStates[i]->closed = 1;
+      debug("processExistingSnapshot: closed channel %d for snapshot \"%s\"\n", i + 1, snapshot->id);
+      info("{proc_id:%d, snapshot_id: %s, snapshot:\"channel closed\", channel:%d-%d, queue:[%s]}",
+        processId + 1,
+        snapshot->id,
+        peers[i]->id + 1,
+        processId + 1,
+        joinStrings(
+          snapshot->channelStates[i]->channelContent,
+          snapshot->channelStates[i]->channelSize,
+          ','
+        )
+      );
+
+      continue;
+    }
+
+    snapshot->channelStates[i]->channelContent[
+      snapshot->channelStates[i]->channelSize
+    ] = strdup(front);
+    debug("processExistingSnapshot: copied \"%s\" to peer %d channel in snaphsot \"%s\"\n", front, i + 1, snapshot->id);
+
+    snapshot->channelStates[i]->channelSize += 1;
+  }
+
+  return NULL;
+}
+
+void* broadcastMarker(char* snapshotId, struct Peer** peers) {
+  debug("============================================\n");
+  debug("Broadcasting marker %s\n", snapshotId);
+  
+  char* markerPacket = createPacket(snapshotId);
+  if (markerPacket == NULL) {
+    info("broadcastMarker: failed to create marker packet!\n");
+    return NULL;
+  }
+
+  for (int i = 0; i < numPeers; i++) {
+    if (i == processId) continue;
+
+    int numBytesSent;
+    if ((numBytesSent = sendAll(peers[i]->write_socket_fd, markerPacket, packetHeaderSize + strlen(snapshotId))) < 0) {
+      debug("broadcastMarker: Failed to send marker packet to peer %s. numBytesSent: %d\n", peers[i]->name, numBytesSent);
+      return NULL;
+    }
+
+    if (numBytesSent == 0) {
+      debug("broadcastMarker: Nothing was sent. numBytesSent is 0!!\n");
+    } else if (numBytesSent < strlen(snapshotId)) {
+      debug("broadcastMarker: Partial snapshotId was sent!!\n");
+    } else {
+      info("proc_id:%d, snapshot_id: %s, sender:%d, receiver:%d, msg:\"marker\", state:%d, has_token:(TODO)}",
+        processId + 1,
+        snapshotId,
+        processId + 1,
+        peers[i]->id + 1,
+        state
+      );
+    }
+  }
+  
+  free(markerPacket);
+
+  debug("Successfully broadcasted marker %s\n", snapshotId);
+  debug("============================================\n\n\n\n");
+  
+  return NULL;
+}
+
+struct Snapshot* initiateSnapshot(struct Snapshot** snapshots, struct Peer** peers) {
+  debug("============================================\n");
+  debug("Creating new snapshot obj with id %s\n", snapshotId);
+  struct Snapshot* newSnapshot = createNewSnapshotObj(snapshotId);
+  debug("Successfully created new snapshot obj with id %s\n", newSnapshot->id);
+  debug("============================================\n\n\n\n");
+
+  debug("============================================\n");
+  debug("Inserting new snapshot %s to list\n", newSnapshot->id);
+  insertAtTail(snapshots, newSnapshot);
+  debug("Successfully inserted snapshot %s to list\n", newSnapshot->id);
+  debug("============================================\n\n\n\n");
+
+  broadcastMarker(newSnapshot->id, peers);
+  
+  return newSnapshot;
 }
 
 void insertAtHead(struct Snapshot** head, struct Snapshot* s) {

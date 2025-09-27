@@ -19,11 +19,14 @@
 struct Peer** peers;
 struct pollfd* pollFds;
 struct Snapshot* snapshots;
+int snapshotInitiated = 0;
 
 void* acceptConnections(void*);
-void* startPolling();
+
 void* startPollingV2();
-void* step(int numEvents);
+
+void* stepDeliveryQueue(int numEvents);
+void* stepReadChannels();
 
 int main(int argc, char const* argv[]) {
   info("Process started\n");
@@ -189,6 +192,17 @@ void* acceptConnections(void* input) {
 
 void* startPollingV2() {
   while(1) {
+    if (snapshotDelay != -1 && strlen(snapshotId) != 0 && snapshotInitiated == 0 && snapshotDelay == state) {
+      debug("============================================\n");
+      debug("Initiating snapshot %s\n", snapshotId);
+      initiateSnapshot(&snapshots, peers);
+      debug("Successfully initiated snapshot %s\n", snapshotId);
+      debug("============================================\n\n\n\n");
+
+      snapshotInitiated = 1;
+      info("{proc_id:%d, snapshot_id: %s, snapshot:\"started\"}", processId, snapshotId);
+    }
+    
     int numEvents = poll(pollFds, numPeers, -1);
 
     debug("Poll: received %d events\n", numEvents);
@@ -198,28 +212,91 @@ void* startPollingV2() {
       return NULL;
     }
 
-    step(numEvents);
+    debug("============================================\n");
+    debug("Stepping delivery queue\n");
+    stepDeliveryQueue(numEvents);
+    debug("Successfully stepped delivery queue\n");
+    debug("============================================\n\n\n\n");
 
-    processSnapshots(&snapshots, peers);
+    debug("============================================\n");
+    debug("Checking for new snapshots\n");
+    checkForNewSnapshots(&snapshots, peers);
+    debug("Successfully checked for new snapshots\n");
+    debug("============================================\n\n\n\n");
 
-    // Marker messages should be removed from any channel before this call.
-    passToken(peers);
+    debug("============================================\n");
+    debug("Processing existing snapshots\n");
+    processExistingSnapshots(snapshots, peers);
+    debug("Successfully processed existing snapshots\n");
+    debug("============================================\n\n\n\n");
+
+    debug("============================================\n");
+    debug("Stepping read channels\n");
+    stepReadChannels();
+    debug("Successfully stepped read channels\n");
+    debug("============================================\n\n\n\n");
   }
 
   return NULL;
 }
 
-void* step(int numEvents) {
+void* stepDeliveryQueue(int numEvents) {
   for (int i = 0, seen = 0; seen <= numEvents && i < numPeers; i++) {
-    if (i == processId || !(pollFds[i].revents & POLLIN)) continue;
-
-    char* data = receivePacket(peers[i]->read_socket_fd);
-    if (data == NULL) {
-      debug("receivePacket: Failed!\n");
+    if (pollFds[i].revents == 0) {
       continue;
     }
+    else if (i == processId) {
+      continue; // Cannot receive event from self as pollFd[self].fd = -1. i.e., poll will ignore negative fd
+    }
+    else if (pollFds[i].revents & POLLHUP) {
+      seen += 1;
+      pollFds[i].fd = -1;
+      debug("stepDeliveryQueue: peer %d closed connection\n", peers[i]->id + 1);
+    }
+    else if (pollFds[i].revents & POLLIN) {
+      char* data = receivePacket(peers[i]->read_socket_fd);
+      if (data == NULL) {
+        debug("stepDeliveryQueue: receivePacket: Failed!\n");
+        continue;
+      }
 
-    enqueue(peers[i]->read_channel, data);
+      if (enqueue(peers[i]->read_channel, data) < 0) {
+        debug("stepDeliveryQueue: failed to enqueue \"%s\" onto peer %d's read channel\n, message dropped\n",
+          data,
+          peers[i]->id + 1
+        );
+        continue;
+      };
+
+      debug("stepDeliveryQueue: enqueued \"%s\" onto peer %d's read channel\n", data, peers[i]->id + 1);
+    }
+    else {
+      seen += 1;
+      debug("stepDeliveryQueue: event %s (raw=%#x) from peer %d\n",
+        pollReventsToStr(pollFds[i].revents),
+        pollFds[i].revents,
+        peers[i]->id + 1
+      );
+    }
+  }
+
+  return NULL;
+}
+
+void* stepReadChannels() {
+  for (int i = 0; i < numPeers; i++) {
+    if (i == processId) continue;
+    if (isEmpty(peers[i]->read_channel)) continue;
+
+    char* front = peek(peers[i]->read_channel);
+    debug("stepReadChannels: peeked peer %d read channel: \"%s\"\n", peers[i]->id + 1, front);
+
+    if (strcmp(front, "token") == 0) {
+      passToken(peers);
+    } else {
+      dequeue(peers[i]->read_channel);
+      free(front);
+    }
   }
 
   return NULL;
