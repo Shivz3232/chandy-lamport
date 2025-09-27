@@ -20,7 +20,7 @@ char* snapshotId = "";
 int starter = 0;
 
 // DEFAULTS
-char* cEnv = "development";
+char* cEnv = "production"; // Change to "development" for debug logs
 int processId = -1;
 char* hostName;
 char* port = "3000";
