@@ -17,9 +17,6 @@ void* passToken(void* input) {
     return NULL;
   }
   
-  state += 1;
-  info("{proc_id: %d, state: %d}", processId + 1, state);
-  
   struct Peer** peers = input;
 
   struct Peer* predecessor = getPredecessor(peers);
