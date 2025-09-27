@@ -79,7 +79,7 @@ void* dialPeers(void* input) {
         perror("getaddrinfo");
         retries += 1;
         sleep(backoffDuration);
-        info("Retrying to connect to %s\n", peers[i]->name);
+        debug("Retrying to connect to %s\n", peers[i]->name);
         continue;
       }
 
@@ -91,7 +91,7 @@ void* dialPeers(void* input) {
           continue;
         }
 
-        info("Attempting connection to %s\n", peers[i]->name);
+        debug("Attempting connection to %s\n", peers[i]->name);
 
         if (connect(socket_fd, p->ai_addr, p->ai_addrlen) < 0) {
           perror("connect");
@@ -102,16 +102,16 @@ void* dialPeers(void* input) {
         // Use this connection only for writing.
         shutdown(socket_fd, SHUT_RD);
 
-        info("Successful outbound connection to %s\n", peers[i]->name);
+        debug("Successful outbound connection to %s\n", peers[i]->name);
         
         break;
       }
 
       if (!p) {
-        info("Failed to connect to %s. Tried %d times. Sleeping.\n", peers[i]->name, retries + 1);
+        debug("Failed to connect to %s. Tried %d times. Sleeping.\n", peers[i]->name, retries + 1);
         retries += 1;
         sleep(backoffDuration);
-        info("Retrying to connect to %s\n", peers[i]->name);
+        debug("Retrying to connect to %s\n", peers[i]->name);
         continue;
       }
 

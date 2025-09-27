@@ -179,7 +179,7 @@ void* acceptConnections(void* input) {
     if (found == 0) {
       info("Received connection from an unknown peer %s\n", peerName);
     } else {
-      info("Successful inbound connection from %s\n", peerName);
+      debug("Successful inbound connection from %s\n", peerName);
     }
 
     free(peerName);
