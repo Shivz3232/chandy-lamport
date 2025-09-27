@@ -7,7 +7,7 @@ extern char* name;
 extern char* network;
 extern char* inputHostname;
 extern double tokenDelay;
-extern int markerDelay;
+extern double markerDelay;
 extern int snapshotDelay;
 extern char* snapshotId;
 extern int starter;
