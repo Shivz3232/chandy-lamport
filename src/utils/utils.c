@@ -352,3 +352,33 @@ int receiveAll(int socketFd, char* buf, int toBeReceived) {
 
   return toBeReceived;
 }
+
+char* joinStrings(char* arr[], int count, char sep) {
+  if (count == 0) {
+    char* empty = malloc(1);
+    if (empty) empty[0] = '\0';
+    return empty;
+  }
+
+  size_t totalLen = 0;
+  for (int i = 0; i < count; i++) {
+    totalLen += strlen(arr[i]);
+  }
+  totalLen += (count - 1);
+  totalLen += 1;
+
+  char* result = malloc(totalLen);
+  if (!result) return NULL;
+
+  result[0] = '\0';
+  for (int i = 0; i < count; i++) {
+    strcat(result, arr[i]);
+    if (i < count - 1) {
+      size_t len = strlen(result);
+      result[len] = sep;
+      result[len + 1] = '\0';
+    }
+  }
+
+  return result;
+}
