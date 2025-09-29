@@ -382,3 +382,11 @@ char* joinStrings(char* arr[], int count, char sep) {
 
   return result;
 }
+
+char* getHasTokenString() {
+  if (hasToken == 1) {
+    return "YES";
+  }
+
+  return "NO";
+}

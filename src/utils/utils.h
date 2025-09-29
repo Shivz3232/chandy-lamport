@@ -20,5 +20,6 @@ const char* pollReventsToStr(short revents);
 void* freePollFds(struct pollfd*);
 
 char* joinStrings(char* arr[], int count, char sep);
+char* getHasTokenString();
 
 #endif
