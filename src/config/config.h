@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 extern int state;
+extern int hasToken;
 
 extern char* name;
 extern char* network;

@@ -8,6 +8,7 @@
 #include "../logger/logger.h"
 
 int state = 0;
+int hasToken = 0;
 
 // CLI Arguments
 char* name;
