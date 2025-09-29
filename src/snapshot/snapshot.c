@@ -163,12 +163,13 @@ void* broadcastMarker(char* snapshotId, struct Peer** peers) {
     } else if (numBytesSent < strlen(snapshotId)) {
       debug("broadcastMarker: Partial snapshotId was sent!!\n");
     } else {
-      info("proc_id:%d, snapshot_id: %s, sender:%d, receiver:%d, msg:\"marker\", state:%d, has_token:(TODO)}",
+      info("proc_id:%d, snapshot_id: %s, sender:%d, receiver:%d, msg:\"marker\", state:%d, has_token:%s}",
         processId + 1,
         snapshotId,
         processId + 1,
         peers[i]->id + 1,
-        state
+        state,
+        getHasTokenString()
       );
     }
   }
