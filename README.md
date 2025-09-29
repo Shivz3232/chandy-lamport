@@ -1,4 +1,4 @@
-# Chandi-Lamport snapshot algorithm state diagram for a process
+# Chandi-Lamport Distributed System snapshot algorithm state diagram for a process
 
 - Q: {q<sub>0</sub>, q<sub>1</sub>, q<sub>2</sub>} 
 - Σ: {C, C<sub>x</sub>, m<sub>i</sub>}
@@ -26,7 +26,8 @@
 
 ## Diagram
 
-@TODO
+![DFA](https://github.com/[Shivz3232]/[chandy-lamport]/blob/[main]/IMG_6325.png?raw=true)
+
 
 # How to run
 
