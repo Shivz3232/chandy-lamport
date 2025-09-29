@@ -35,6 +35,8 @@
 - `docker compose -f <docker compose file> up`
 
 - All test cases are working.
+- As a bonus, with the current implementation, I was able to handle multiple tokens and also recording other snapshots that are in progress when taking a snapshot!
+- The latter can be enabled by removing line 130 in `snapshot.c`
 
 Note: I wasn't able to figure out how to implement circular queue in C. Since read channels use these limited sized queues, the app can raise an exception if the queue is exhausted. Thus we can only run the application upto ~900 states which is quite sufficient for the provided testcases. If required the queue size can be increased by increasing the value of the `channelSize` configuration paramter. This is definitely something we wouldn't have in a production application, if I find more bandwidth, will update the data structure to a circular queue in the future.
 
