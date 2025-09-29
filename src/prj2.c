@@ -260,6 +260,11 @@ void* stepDeliveryQueue(int numEvents) {
         continue;
       }
 
+      if (strcmp(data, "token") == 0) {
+        hasToken = 1;
+        debug("stepDeliveryQueue: set hasToken to 1\n");
+      }
+
       if (enqueue(peers[i]->read_channel, data) < 0) {
         debug("stepDeliveryQueue: failed to enqueue \"%s\" onto peer %d's read channel\n, message dropped\n",
           data,

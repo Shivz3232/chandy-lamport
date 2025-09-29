@@ -67,6 +67,8 @@ void* passToken(void* input) {
     debug("Partial token was sent!!\n");
   } else {
     debug("Token forwarded successfully (sent %d bytes).\n", numBytesSent);
+    hasToken = 0;
+    debug("passToken: set hasToken to 0\n");
     info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, processId + 1, successor->id + 1);
   }
 
@@ -77,6 +79,9 @@ void* passToken(void* input) {
 }
 
 void* startTokenPassing(void* input) {
+  hasToken = 1;
+  debug("startTokenPassing: set hasToken to 1\n");
+  
   state += 1;
   info("{proc_id: %d, state: %d}", processId + 1, state);
   
@@ -109,6 +114,8 @@ void* startTokenPassing(void* input) {
     debug("Partial token was sent!!\n");
   } else {
     debug("Token forwarded successfully (sent %d bytes)\n", numBytesSent);
+    hasToken = 0;
+    debug("startTokenPassing: set hasToken to 0\n");
     info("{proc_id: %d, sender: %d, receiver: %d, message:\"token\"}", processId + 1, processId + 1, successor->id + 1);
   }
   
