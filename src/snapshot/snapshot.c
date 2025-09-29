@@ -127,6 +127,7 @@ void* processExistingSnapshot(struct Snapshot* snapshot, struct Peer** peers) {
     }
 
     if (snapshot->channelStates[i]->closed == 1) continue;
+    if (strcmp(front, "token") != 0) continue;
 
     snapshot->channelStates[i]->channelContent[
       snapshot->channelStates[i]->channelSize
