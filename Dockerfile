@@ -16,7 +16,7 @@ COPY hostsfile.txt ${APP_HOME}
 
 RUN mkdir -p ${APP_HOME}/bin
 
-COPY .env .
+COPY .env* .
 COPY makefile .
 
 RUN make compile

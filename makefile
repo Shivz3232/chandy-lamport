@@ -1,4 +1,4 @@
-include .env
+-include .env
 export
 
 compile: src/prj2.c src/config/config.c src/peers/peers.c src/utils/utils.c src/logger/logger.c src/token/token.c src/queue/queue.c src/snapshot/snapshot.c
